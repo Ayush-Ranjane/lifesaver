@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Users can only read/write their own document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow access to user's subcollections (tasks, habits, etc.)
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Shipped Wall (Public Feed)
+    match /shippedWall/{docId} {
+      // Anyone can read the public wall
+      allow read: if true;
+      // Only authenticated users can create their own ships
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Users can only delete their own ships
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // No updates allowed on shipped items
+      allow update: if false;
+    }
+
+    // 3. Accountability Pods
+    match /pods/{podId} {
+      // Any authenticated user can read public pods or pods they are a member of
+      allow read: if request.auth != null;
+      // Any authenticated user can create a pod
+      allow create: if request.auth != null;
+      // Only members can update the pod
+      allow update: if request.auth != null && request.auth.uid in resource.data.members;
+      
+      // Pod Members Subcollection
+      match /members/{memberId} {
+        // Members can read all other members
+        allow read: if request.auth != null;
+        // Users can join/update their own membership
+        allow write: if request.auth != null && request.auth.uid == memberId;
+      }
+    }
+
+    // 4. Future Letters
+    match /futureLetters/{letterId} {
+      // Users can only read/write their own letters
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
