@@ -32,9 +32,10 @@ import { isPast } from 'date-fns';
 interface InboxTaskRowProps {
   task: Task;
   compact?: boolean;
+  isSelected?: boolean;
 }
 
-export function InboxTaskRow({ task, compact }: InboxTaskRowProps) {
+export function InboxTaskRow({ task, compact, isSelected = false }: InboxTaskRowProps) {
   const complete = useCompleteTask();
   const del = useDeleteTask();
   const snooze = useSnoozeTask();
